@@ -1,0 +1,58 @@
+
+# read data
+key.analysis <- read.csv("the_key_analysis_data_1000.csv")
+
+# contact ids, topic scores, organisations grouped by rank
+key.analysis.data <- data.frame(key.analysis$contactid, key.analysis[,62:112], key.analysis$organisation_project_rank_bins)
+
+# dataframes for each grouping of organisations
+top.20.organisations <- key.analysis.data[key.analysis.data$key.analysis.organisation_project_rank_bins == "Top 20",]
+top.21.to.50.organisations <- key.analysis.data[key.analysis.data$key.analysis.organisation_project_rank_bins == "Top 21-50",]
+top.51.to.100.organisations <- key.analysis.data[key.analysis.data$key.analysis.organisation_project_rank_bins == "Top 51-100",]
+top.101.to.1000.organisations <- key.analysis.data[key.analysis.data$key.analysis.organisation_project_rank_bins == "Top 101-1000",]
+
+# check
+top.20.organisations[1:50,2:52]
+top.21.to.50.organisations
+top.51.to.100.organisations
+top.101.to.1000.organisations
+
+# subsets
+top.20.organisations <- subset(top.20.organisations, top.20.organisations$total_words!="NA")
+top.21.to.50.organisations <- subset(top.21.to.50.organisations, top.21.to.50.organisations$total_words!="NA")
+top.51.to.100.organisations <- subset(top.51.to.100.organisations, top.51.to.100.organisations$total_words!="NA")
+top.101.to.1000.organisations <- subset(top.101.to.1000.organisations, top.101.to.1000.organisations$total_words!="NA")
+
+# top 20
+top.20.organisations <- top.20.organisations[sort(top.20.organisations$total_words),]
+barplot(top.20.organisations$total_words, ylim=c(0,125), xlab="Count", ylab="Number of Words", main="Count of Organisations by Total Words Number \n for Top 20 Organisations")
+
+# top 21-50
+top.21.to.50.organisations <- top.21.to.50.organisations[sort(top.21.to.50.organisations$total_words),]
+barplot(top.21.to.50.organisations$total_words, ylim=c(0,90), xlab="Count", ylab="Number of Words", main="Count of Organisations by Total Words Number \n for Top 21-50 Organisations")
+
+# top 51-100
+top.51.to.100.organisations <- top.51.to.100.organisations[sort(top.51.to.100.organisations$total_words),]
+barplot(top.51.to.100.organisations$total_words, ylim=c(0,100), xlab="Count", ylab="Number of Words", main="Count of Organisations by Total Words Number \n for Top 51-100 Organisations")
+
+# top 101-1000
+top.101.to.1000.organisations <- top.101.to.1000.organisations[sort(top.101.to.1000.organisations$total_words),]
+barplot(top.101.to.1000.organisations$total_words, ylim=c(0,300), xlab="Count", ylab="Number of Words", main="Count of Organisations by Total Words Number \n for Top 101-1000 Organisations")
+
+# max
+max(top.20.organisations$total_words)
+max(top.21.to.50.organisations$total_words)
+max(top.51.to.100.organisations$total_words)
+max(top.101.to.1000.organisations$total_words)
+
+# min
+min(top.20.organisations$total_words)
+min(top.21.to.50.organisations$total_words)
+min(top.51.to.100.organisations$total_words)
+min(top.101.to.1000.organisations$total_words)
+
+# min
+mean(top.20.organisations$total_words)
+mean(top.21.to.50.organisations$total_words)
+mean(top.51.to.100.organisations$total_words)
+mean(top.101.to.1000.organisations$total_words)
