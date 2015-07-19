@@ -284,15 +284,16 @@
   topOrgs$rankProjects <- as.numeric(row.names(topOrgs))
   head(topOrgs)
   
-  prep <- orgsOverPerform[which(orgsOverPerform$rankProjects <= 15),]
+  prep <- orgsOverPerform[which(orgsOverPerform$rankProjects <= 10),]
   prepLong <- melt(prep, c("rankProjects", "overPerform", "organisation_id_o", "organisation_name"))
   graphData <- prepLong
   graphData <- transform(graphData, label=reorder(organisation_name, -rankProjects))
-  ggplot(graphData, aes(x=label, y=value, fill=variable)) +
+  graphData$charity <- "key"
+  ggplot(graphData, aes(x=label, y=value, fill=charity)) +
     geom_bar(stat="identity") +
     coord_flip() +
     scale_x_discrete(name="") +
-    scale_fill_manual(values=myPalette) +
+    scale_fill_manual(values=myPalette[5]) +
     theme(text = element_text(size=15)) +
     theme(legend.position="none") +
     facet_wrap(~variable, ncol=1)
