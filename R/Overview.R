@@ -155,4 +155,147 @@
     theme(text = element_text(size=15)) +
     coord_flip()
   
+#Facilitators
+  #projects per facilitator
+  summaryFacilitator <- mergedRecent %>%
+    group_by(contactid) %>%
+    summarise(projects=n()) %>%
+    arrange(-projects)
+  head(summaryFacilitator)
+  
+  summaryFacilitator$rankProjects <- as.numeric(row.names(summaryFacilitator))
+  summaryFacilitator$pctProjects <- summaryFacilitator$projects / sum(summaryFacilitator$projects)
+  summaryFacilitator$cumPctProjects <- cumsum(summaryFacilitator$pctProjects)
+  summaryFacilitator$pctFacilitator <- summaryFacilitator$rankProjects / nrow(summaryFacilitator)
+  head(summaryFacilitator)
+  
+  graphData <- summaryFacilitator
+  ggplot(graphData, aes(x=pctFacilitator, y=cumPctProjects)) +
+    geom_point() +
+    scale_x_continuous(name="% facilitators", labels=percent) +
+    scale_y_continuous(name="% projects", labels=percent) +
+    theme(text = element_text(size=15))
+  
+  ggplot(graphData, aes(x=summaryFacilitator$projects, y=..density..)) +
+    geom_histogram(binwidth=1, color=grey) +
+    scale_y_continuous(name="% facilitators", labels=percent) +
+    scale_x_continuous(name="projects") +
+    theme(text = element_text(size=15))
+  
+  #top facilitators vs top organisations
+  
+  # - What organisations do top facilitators work for?
+  summaryFacilitatorProject <- mergedRecent %>%
+      group_by(contactid, organisation_id_o, organisation_name) %>%
+      summarise(projects=n())
+  
+  head(summaryFacilitatorProject)
+  
+  #merge with organisation rank
+  head(summaryFacilitatorProject)
+  head(summaryOrgProject)
+  head(summaryFacilitator)
+  quantile(summaryFacilitator$projects)
+  quantile(summaryOrgProject$projects)
+  
+  facilitatorOrgRank <- sqldf("SELECT A.contactid, A.organisation_id_o, A.organisation_name, 
+                                  A.projects,  B.rankProjects as rankProjectsOrg, 
+                                  C.rankProjects as rankProjectsFacilitator
+                              FROM summaryFacilitatorProject A
+                                INNER JOIN summaryOrgProject B ON A.organisation_id_o = B.organisation_id_o 
+                                INNER JOIN summaryFacilitator C ON A.contactid = C.contactid")
+
+  head(facilitatorOrgRank)
+  
+  facilitatorOrgRank$pctFacilitator <- 1 - facilitatorOrgRank$rankProjectsFacilitator / max(facilitatorOrgRank$rankProjectsFacilitator)
+  facilitatorOrgRank$pctOrg <- 1 - facilitatorOrgRank$rankProjectsOrg / max(facilitatorOrgRank$rankProjectsOrg)
+  
+  nrow(summaryFacilitatorProject)
+  nrow(facilitatorOrgRank)
+  sum(facilitatorOrgRank$projects)
+
+  head(facilitatorOrgRank)
+  graphData <- facilitatorOrgRank
+  ggplot(graphData, aes(x=pctFacilitator, y=pctOrg, color=projects)) +
+    geom_point() +
+    scale_x_continuous(name="Facilitator Rank", labels=percent)  +
+    scale_y_continuous(name="Organisation Rank", labels=percent) +
+    theme(text = element_text(size=15)) +
+    geom_abline(intercept = 0, slope = 1)
+
+  
+  head(facilitatorOrgRank)
+  facilitatorOrgRank$absPerformanceDiff <- abs(facilitatorOrgRank$pctFacilitator - facilitatorOrgRank$pctOrg)
+  facilitatorOrgRank$overPerform <- ifelse(facilitatorOrgRank$pctFacilitator > facilitatorOrgRank$pctOrg, "facilitator", "organisation")
+  
+  facilitatorOrgRank$overPerform <-""
+  for(i in 1:nrow(facilitatorOrgRank)){
+    if(facilitatorOrgRank$pctFacilitator[i] >= 0.75 & facilitatorOrgRank$pctOrg[i] >= 0.75){
+      facilitatorOrgRank$overPerform[i] = "top facilitators and organisations"
+    }else{
+      if(facilitatorOrgRank$pctOrg[i] >= 0.75){
+        facilitatorOrgRank$overPerform[i] = "above average organisations"
+      } else if(facilitatorOrgRank$pctFacilitator[i] >= 0.75){
+        facilitatorOrgRank$overPerform[i] = "above average facilitators"
+      } else{
+        facilitatorOrgRank$overPerform[i] = "other"
+      }
+    }
+  }
+  
+  graphData <- facilitatorOrgRank
+  ggplot(graphData, aes(x=pctFacilitator, y=pctOrg, color=overPerform)) +
+    geom_point() +
+    scale_x_continuous(name="Facilitator Rank", labels=percent)  +
+    scale_y_continuous(name="Organisation Rank", labels=percent) +
+    scale_color_manual(values=myPalette) +
+    theme(text = element_text(size=15)) +
+    theme(legend.title=element_blank()) +
+    geom_abline(intercept = 0, slope = 1)
+  
+  
+  #Distribution of projects per performance group
+  sum(facilitatorOrgRank$projects)
+  facilitatorOrgPerformance <- facilitatorOrgRank %>%
+    group_by(overPerform) %>%
+    summarise(projects=sum(projects),
+              organisations=length(unique(organisation_id_o)),
+              facilitators=length(unique(contactid))) %>%
+    arrange(-projects)
+
+  graphData <- facilitatorOrgPerformance[-which(facilitatorOrgPerformance$overPerform == "other"),]
+  graphData <- transform(graphData, label=reorder(overPerform, projects))
+  ggplot(graphData, aes(x=label, y=projects, fill=overPerform)) +
+    geom_bar(stat="identity") +
+    scale_fill_manual(values=myPalette) +
+    scale_x_discrete(name="") +
+    theme(text = element_text(size=15)) +
+    theme(legend.position="none") +
+    coord_flip()
+  
+  #Focus above average organisations
+  
+  topOrgs <- filter(facilitatorOrgRank, facilitatorOrgRank$overPerform %in% c("above average organisations", "top facilitators and organisations") ) %>%
+      group_by(overPerform, organisation_id_o, organisation_name) %>%
+      summarise(projects=sum(projects),
+                facilitators=length(unique(contactid))) %>%
+      arrange(-projects)
+  topOrgs$avgProjectsPerFacilitator <- topOrgs$projects / topOrgs$facilitators
+  topOrgs$rankProjects <- as.numeric(row.names(topOrgs))
+  head(topOrgs)
+  
+  prep <- orgsOverPerform[which(orgsOverPerform$rankProjects <= 15),]
+  prepLong <- melt(prep, c("rankProjects", "overPerform", "organisation_id_o", "organisation_name"))
+  graphData <- prepLong
+  graphData <- transform(graphData, label=reorder(organisation_name, -rankProjects))
+  ggplot(graphData, aes(x=label, y=value, fill=variable)) +
+    geom_bar(stat="identity") +
+    coord_flip() +
+    scale_x_discrete(name="") +
+    scale_fill_manual(values=myPalette) +
+    theme(text = element_text(size=15)) +
+    theme(legend.position="none") +
+    facet_wrap(~variable, ncol=1)
+
+  
   
