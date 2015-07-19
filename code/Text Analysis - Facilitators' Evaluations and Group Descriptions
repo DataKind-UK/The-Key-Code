@@ -1,0 +1,353 @@
+
+# FACILITATORS FOR THE KEY
+
+# READ AND STORE DATA - HOW FACILIATORS SUPPORTED and GROUP DESCRIPTIONS
+key.analysis.data <- read.csv("KEY_ANALYSIS_DATA _1900.csv")
+# READ AND STORE DATA - CONTACT DATA
+contact.data <- read.csv("contact.csv")
+
+# TEXT LIBRARIES
+# LIBRARIES
+library(NLP)
+library(XML)
+library(tm)
+library(filehash)
+library(topicmodels)
+library(SnowballC)
+library(slam)
+
+# CLEAN TEXT CORPUS FUNCTION
+cleaned.text <- function(text.corpus) {
+  text.corpus.clean = tm_map(text.corpus, removeNumbers) # remove numbers
+  text.corpus.clean = tm_map(text.corpus.clean, removePunctuation) # remove punctuation
+  text.corpus.clean = tm_map(text.corpus.clean, content_transformer(tolower))  # ignore case
+  #text.corpus.clean = tm_map(text.corpus.clean, stemDocument)  # remove all stem words
+  english.stopwords = c(stopwords("english"), "_") # stopwords
+  text.corpus.clean = tm_map(text.corpus.clean, removeWords, english.stopwords) # remove stopwords
+  text.corpus.clean = tm_map(text.corpus.clean, stripWhitespace)  # remove extra whitespace
+  inspect(text.corpus.clean)
+}
+
+# ENTIRE DATA
+
+# text data - how supported
+howsupported <- key.analysis.data$howsupported
+
+# text corpus - how supported
+howsupported.corpus <- VCorpus(VectorSource(howsupported)) 
+inspect(howsupported.corpus)
+
+# cleaned text - how supported
+howsupported.cleaned.corpus <- cleaned.text(howsupported.corpus) 
+
+# DTM - how supported
+# top 20
+howsupported.tf = DocumentTermMatrix(howsupported.cleaned.corpus, control = list(weighting = weightTf)) 
+# remove empty documents
+row.sums.howsupported = apply(howsupported.tf, 1, sum) 
+howsupported.tf.emptied = howsupported[row.sums.howsupported > 0]
+howsupported.tf.emptied  = howsupported.tf[row.sums.howsupported > 0,]
+howsupported.tf.emptied # 2837 terms, 2048 documents
+#<<DocumentTermMatrix (documents: 2048, terms: 2837)>>
+#  Non-/sparse entries: 21610/5788566
+#Sparsity           : 100%
+#Maximal term length: 29
+#Weighting          : term frequency (tf)
+
+# topic model - how supported
+howsupported.topicmodel = LDA(howsupported.tf.emptied, 40) 
+terms(howsupported.topicmodel, 10)
+write.csv(terms(howsupported.topicmodel, 10), "howsupported.40topics.csv")
+
+
+# text data - group description
+description <- key.analysis.data$description
+
+# text corpus - group description
+description.corpus <- VCorpus(VectorSource(description)) 
+inspect(description.corpus)
+
+# cleaned text - group description
+description.cleaned.corpus <- cleaned.text(description.corpus) 
+
+# DTM - group description
+# top 20
+description.tf = DocumentTermMatrix(description.cleaned.corpus, control = list(weighting = weightTf)) 
+# remove empty documents
+row.sums.description = apply(description.tf, 1, sum) 
+description.tf.emptied = description[row.sums.description > 0]
+description.tf.emptied  = description.tf[row.sums.description > 0,]
+description.tf.emptied # 4026 documents, 7844 terms
+#<<DocumentTermMatrix (documents: 4026, terms: 7844)>>
+#  Non-/sparse entries: 65292/31514652
+#Sparsity           : 100%
+#Maximal term length: 38
+#Weighting          : term frequency (tf)
+
+# topic model - group description
+description.topicmodel = LDA(description.tf.emptied, 45) 
+terms(description.topicmodel, 10)
+write.csv(terms(description.topicmodel, 10), "description.45topics.csv")
+
+
+# text data - job titles
+jobtitles <- contact.data$jobtitle
+
+# text corpus - job titles
+jobtitles.corpus <- VCorpus(VectorSource(jobtitles)) 
+inspect(jobtitles.corpus)
+
+# cleaned text - job titles
+jobtitles.cleaned.corpus <- cleaned.text(jobtitles.corpus) 
+
+# DTM - job titles
+# top 20
+jobtitles.tf = DocumentTermMatrix(jobtitles.cleaned.corpus, control = list(weighting = weightTf)) 
+# remove empty documents
+row.sums.jobtitles = apply(jobtitles.tf, 1, sum) 
+jobtitles.tf.emptied = jobtitles[row.sums.jobtitles > 0]
+jobtitles.tf.emptied  = jobtitles.tf[row.sums.jobtitles > 0,]
+jobtitles.tf.emptied # 2591 documents, 724 terms
+#<<DocumentTermMatrix (documents: 2591, terms: 724)>>
+#  Non-/sparse entries: 6393/1869491
+#Sparsity           : 100%
+#Maximal term length: 33
+#Weighting          : term frequency (tf)
+
+# topic model - job titles
+jobtitles.topicmodel = LDA(jobtitles.tf.emptied, 30) 
+terms(jobtitles.topicmodel, 10)
+write.csv(terms(jobtitles.topicmodel, 10), "jobtitles.30topics.csv")
+
+
+##########################################################################
+
+# TOP ORGANIZATIONS
+#unique(key.analysis.data$organisation_project_rank_bins) # top 101-1000, top 21-50, top 20, top 51-100
+
+# top 101-1000
+#top.20 <- key.analysis.data[key.analysis.data$organisation_project_rank_bins == "Top 20",]
+#top.21.to.50 <- key.analysis.data[key.analysis.data$organisation_project_rank_bins == "Top 21-50",]
+#top.51.to.100 <- key.analysis.data[key.analysis.data$organisation_project_rank_bins == "Top 51-100",]
+#top.101.to.1000 <- key.analysis.data[key.analysis.data$organisation_project_rank_bins == "Top 101-1000",]
+
+
+# TEXT DATA - HOW FACILITATORS SUPPORTED - SEPARATING IN BUCKETS
+#top.20.howsupported <- top.20$howsupported
+#top.21.to.50.howsupported <- top.21.to.50$howsupported
+#top.51.to.100.howsupported <- top.51.to.100$howsupported
+#top.101.to.1000.howsupported <- top.101.to.1000$howsupported
+
+# TEXT DATA - HOW FACILITATORS WORKED FOR - SEPARATING IN BUCKETS
+#top.20.howworkedfor <- top.20$howworkedfor
+#top.21.to.50.howworkedfor <- top.21.to.50$howworkedfor
+#top.51.to.100.howworkedfor <- top.51.to.100$howworkedfor
+#top.101.to.1000.howworkedfor <- top.101.to.1000$howworkedfor
+
+# TEXT CORPUS - HOW FACILITATORS SUPPORTED - SEPARATING IN BUCKETS
+# top 20
+#top.20.howsupported.corpus <- VCorpus(VectorSource(top.20.howsupported)) 
+#inspect(top.20.howsupported.corpus)
+# top 21-50
+#top.21.to.50.howsupported.corpus <- VCorpus(VectorSource(top.21.to.50.howsupported)) 
+#inspect(top.21.to.50.howsupported.corpus)
+# top 51-100
+#top.51.to.100.howsupported.corpus <- VCorpus(VectorSource(top.51.to.100.howsupported)) 
+#inspect(top.51.to.100.howsupported.corpus)
+# top 101-1000
+#top.101.to.1000.howsupported.corpus <- VCorpus(VectorSource(top.101.to.1000.howsupported)) 
+#inspect(top.101.to.1000.howsupported.corpus)
+
+# TEXT CORPUS - HOW FACILITATORS WORKED FOR - SEPARATING IN BUCKETS
+# top 20
+#top.20.howworkedfor.corpus <- VCorpus(VectorSource(top.20.howworkedfor)) 
+#inspect(top.20.howworkedfor.corpus)
+# top 21-50
+#top.21.to.50.howworkedfor.corpus <- VCorpus(VectorSource(top.21.to.50.howworkedfor)) 
+#inspect(top.21.to.50.howworkedfor.corpus)
+# top 51-100
+#top.51.to.100.howworkedfor.corpus <- VCorpus(VectorSource(top.51.to.100.howworkedfor)) 
+#inspect(top.51.to.100.howworkedfor.corpus)
+# top 101-1000
+#top.101.to.1000.howworkedfor.corpus <- VCorpus(VectorSource(top.101.to.1000.howworkedfor)) 
+#inspect(top.101.to.1000.howworkedfor.corpus)
+
+# CLEANED TEXT - HOW FACILITATORS SUPPORTED - SEPARATING IN BUCKETS
+# top 20
+#top.20.howsupported.cleaned.corpus <- cleaned.text(top.20.howsupported.corpus) 
+# top 21-50
+#top.21.to.50.howsupported.cleaned.corpus <- cleaned.text(top.21.to.50.howsupported.corpus) 
+# top 51-100
+#top.51.to.100.howsupported.cleaned.corpus <- cleaned.text(top.51.to.100.howsupported.corpus) 
+# top 101-1000
+#top.101.to.1000.howsupported.cleaned.corpus <- cleaned.text(top.101.to.1000.howsupported.corpus) 
+
+# CLEANED TEXT - HOW FACILITATORS WORKED FOR - SEPARATING IN BUCKETS
+# top 20
+#top.20.howworkedfor.cleaned.corpus <- cleaned.text(top.20.howworkedfor.corpus)
+# top 21-50
+#top.21.to.50.howworkedfor.cleaned.corpus <- cleaned.text(top.21.to.50.howworkedfor.corpus)
+# top 51-100
+#top.51.to.100.howworkedfor.cleaned.corpus <- cleaned.text(top.51.to.100.howworkedfor.corpus)
+# top 101-1000
+#top.101.to.1000.howworkedfor.cleaned.corpus <- cleaned.text(top.101.to.1000.howworkedfor.corpus)
+
+# DOCUMENT TERM MATRIX - HOW FACILITATORS SUPPORTED - SEPARATING IN BUCKETS
+# top 20
+#top.20.howsupported.tf = DocumentTermMatrix(top.20.howsupported.cleaned.corpus, control = list(weighting = weightTf)) 
+# remove empty documents
+#row.sums.top.20.howsupported = apply(top.20.howsupported.tf, 1, sum) 
+#top.20.howsupported.tf.emptied = top.20.howsupported[row.sums.top.20.howsupported > 0]
+#top.20.howsupported.tf.emptied  = top.20.howsupported.tf[row.sums.top.20.howsupported > 0,]
+#top.20.howsupported.tf.emptied
+#<<DocumentTermMatrix (documents: 588, terms: 1342)>>
+#  Non-/sparse entries: 5858/783238
+#Sparsity           : 99%
+#Maximal term length: 20
+#Weighting          : term frequency (tf)
+
+# top 21-50
+#top.21.to.50.howsupported.tf = DocumentTermMatrix(top.21.to.50.howsupported.cleaned.corpus, control = list(weighting = weightTf)) 
+# remove empty documents
+#row.sums.top.21.to.50.howsupported = apply(top.21.to.50.howsupported.tf, 1, sum) 
+#top.21.to.50.howsupported.tf.emptied = top.21.to.50.howsupported[row.sums.top.21.to.50.howsupported > 0]
+#top.21.to.50.howsupported.tf.emptied  = top.21.to.50.howsupported.tf[row.sums.top.21.to.50.howsupported > 0,]
+#top.21.to.50.howsupported.tf.emptied
+#<<DocumentTermMatrix (documents: 251, terms: 692)>>
+#  Non-/sparse entries: 2268/171424
+#Sparsity           : 99%
+#Maximal term length: 16
+#Weighting          : term frequency (tf)
+
+# top 51-100
+#top.51.to.100.howsupported.tf = DocumentTermMatrix(top.51.to.100.howsupported.cleaned.corpus, control = list(weighting = weightTf)) 
+# remove empty documents
+#row.sums.top.51.to.100.howsupported = apply(top.51.to.100.howsupported.tf, 1, sum) 
+#top.51.to.100.howsupported.tf.emptied = top.51.to.100.howsupported[row.sums.top.51.to.100.howsupported > 0]
+#top.51.to.100.howsupported.tf.emptied  = top.51.to.100.howsupported.tf[row.sums.top.51.to.100.howsupported > 0,]
+#top.51.to.100.howsupported.tf.emptied
+#<<DocumentTermMatrix (documents: 313, terms: 784)>>
+#  Non-/sparse entries: 3093/242299
+#Sparsity           : 99%
+#Maximal term length: 16
+#Weighting          : term frequency (tf)
+
+# top 101-1000
+#top.101.to.1000.howsupported.tf = DocumentTermMatrix(top.101.to.1000.howsupported.cleaned.corpus, control = list(weighting = weightTf)) 
+# remove empty documents
+#row.sums.top.101.to.1000.howsupported = apply(top.101.to.1000.howsupported.tf, 1, sum) 
+#top.101.to.1000.howsupported.tf.emptied = top.101.to.1000.howsupported[row.sums.top.101.to.1000.howsupported > 0]
+#top.101.to.1000.howsupported.tf.emptied  = top.101.to.1000.howsupported.tf[row.sums.top.101.to.1000.howsupported > 0,]
+#top.101.to.1000.howsupported.tf.emptied
+#<<DocumentTermMatrix (documents: 896, terms: 1986)>>
+#  Non-/sparse entries: 10391/1769065
+#Sparsity           : 99%
+#Maximal term length: 29
+#Weighting          : term frequency (tf)
+
+# DOCUMENT TERM MATRIX - HOW FACILITATORS WORKED FOR - SEPARATING IN BUCKETS
+# top 20
+#top.20.howworkedfor.tf = DocumentTermMatrix(top.20.howworkedfor.cleaned.corpus, control = list(weighting = weightTf)) 
+# remove empty documents
+#row.sums.top.20.howworkedfor = apply(top.20.howworkedfor.tf, 1, sum) 
+#top.20.howworkedfor.tf.emptied = top.20.howworkedfor[row.sums.top.20.howworkedfor > 0]
+#top.20.howworkedfor.tf.emptied  = top.20.howworkedfor.tf[row.sums.top.20.howworkedfor > 0,]
+#top.20.howworkedfor.tf.emptied
+#<<DocumentTermMatrix (documents: 588, terms: 1342)>>
+#  Non-/sparse entries: 5858/783238
+#Sparsity           : 99%
+#Maximal term length: 20
+#Weighting          : term frequency (tf)
+
+# top 21-50
+#top.21.to.50.howworkedfor.tf = DocumentTermMatrix(top.21.to.50.howworkedfor.cleaned.corpus, control = list(weighting = weightTf)) 
+# remove empty documents
+#row.sums.top.21.to.50.howworkedfor = apply(top.21.to.50.howworkedfor.tf, 1, sum) 
+#top.21.to.50.howworkedfor.tf.emptied = top.21.to.50.howworkedfor[row.sums.top.21.to.50.howworkedfor > 0]
+#top.21.to.50.howworkedfor.tf.emptied  = top.21.to.50.howworkedfor.tf[row.sums.top.21.to.50.howworkedfor > 0,]
+#top.21.to.50.howworkedfor.tf.emptied
+#<<DocumentTermMatrix (documents: 251, terms: 692)>>
+#  Non-/sparse entries: 2268/171424
+#Sparsity           : 99%
+#Maximal term length: 16
+#Weighting          : term frequency (tf)
+
+# top 51-100
+#top.51.to.100.howworkedfor.tf = DocumentTermMatrix(top.51.to.100.howworkedfor.cleaned.corpus, control = list(weighting = weightTf)) 
+# remove empty documents
+#row.sums.top.51.to.100.howworkedfor = apply(top.51.to.100.howworkedfor.tf, 1, sum) 
+#top.51.to.100.howworkedfor.tf.emptied = top.51.to.100.howworkedfor[row.sums.top.51.to.100.howworkedfor > 0]
+#top.51.to.100.howworkedfor.tf.emptied  = top.51.to.100.howworkedfor.tf[row.sums.top.51.to.100.howworkedfor > 0,]
+#top.51.to.100.howworkedfor.tf.emptied
+#<<DocumentTermMatrix (documents: 313, terms: 784)>>
+#  Non-/sparse entries: 3093/242299
+#Sparsity           : 99%
+#Maximal term length: 16
+#Weighting          : term frequency (tf)
+
+# top 101-1000
+#top.101.to.1000.howworkedfor.tf = DocumentTermMatrix(top.101.to.1000.howworkedfor.cleaned.corpus, control = list(weighting = weightTf)) 
+# remove empty documents
+#row.sums.top.101.to.1000.howworkedfor = apply(top.101.to.1000.howworkedfor.tf, 1, sum) 
+#top.101.to.1000.howworkedfor.tf.emptied = top.101.to.1000.howworkedfor[row.sums.top.101.to.1000.howworkedfor > 0]
+#top.101.to.1000.howworkedfor.tf.emptied  = top.101.to.1000.howworkedfor.tf[row.sums.top.101.to.1000.howworkedfor > 0,]
+#top.101.to.1000.howworkedfor.tf.emptied
+#<<DocumentTermMatrix (documents: 896, terms: 1986)>>
+#  Non-/sparse entries: 10391/1769065
+#Sparsity           : 99%
+#Maximal term length: 29
+#Weighting          : term frequency (tf)
+
+# TRAIN TOPIC MODEL + MOST FREQUENT TERMS - HOW SUPPORTED FOR - SEPARATING IN BUCKETS
+# top 20
+#top.20.howsupported.topicmodel = LDA(top.20.howsupported.tf.emptied, 25) 
+#terms(top.20.howsupported.topicmodel, 8)
+#write.csv(terms(top.20.howsupported.topicmodel, 8), "top.20.howsupported.topics.csv")
+#top.20.howsupported.freqterms <- findFreqTerms(top.20.howsupported.tf.emptied, lowfreq=20) # 1342 terms, 5858 documents
+#write.csv(top.20.howsupported.freqterms, "top.20.howsupported.freqterms.csv")
+
+# top 21-50
+#top.21.to.50.howsupported.topicmodel = LDA(top.21.to.50.howsupported.tf.emptied, 25) 
+#terms(top.21.to.50.howsupported.topicmodel, 8)
+#top.21.to.50.howsupported.freqterms <- findFreqTerms(top.21.to.50.howsupported.tf.emptied, lowfreq=20) # 692 terms, 251 documents
+#write.csv(top.21.to.50.howsupported.freqterms, "top.21.to.50.howsupported.freqterms.csv")
+
+# top 51-100
+#top.51.to.100.howsupported.topicmodel = LDA(top.51.to.100.howsupported.tf.emptied, 25) 
+#terms(top.51.to.100.howsupported.topicmodel, 8)
+#findFreqTerms(top.51.to.100.howsupported.tf.emptied, lowfreq=8) 
+#top.51.to.100.howsupported.freqterms <- findFreqTerms(top.51.to.100.howsupported.tf.emptied, lowfreq=20) # 784 terms, 313 documents
+#write.csv(top.51.to.100.howsupported.freqterms, "top.51.to.100.howsupported.freqterms.csv")
+
+# top 101-1000
+#top.101.to.1000.howsupported.topicmodel = LDA(top.101.to.1000.howsupported.tf.emptied, 25) 
+#terms(top.101.to.1000.howsupported.topicmodel, 8)
+#top.101.to.1000.howsupported.freqterms <- findFreqTerms(top.101.to.1000.howsupported.tf.emptied, lowfreq=20) # 1986 terms, 896 documents
+#write.csv(top.101.to.1000.howsupported.freqterms, "top.101.to.1000.howsupported.freqterms.csv")
+
+# TRAIN TOPIC MODEL + MOST FREQUENT TERMS - HOW WORKED FOR
+# top 20
+#top.20.howworkedfor.topicmodel = LDA(top.20.howworkedfor.tf.emptied, 25) 
+#terms(top.20.howworkedfor.topicmodel, 8)
+#top20.howworkedfor.freqterms <- findFreqTerms(top.20.howworkedfor.tf.emptied, lowfreq=20)
+#write.csv(top20.howworkedfor.freqterms, "top.20.howworkedfor.freqterms.csv")
+
+# top 21-50
+#top.21.to.50.howworkedfor.topicmodel = LDA(top.21.to.50.howworkedfor.tf.emptied, 25) 
+#terms(top.21.to.50.howworkedfor.topicmodel, 8)
+#top21.to.50.howworkedfor.freqterms <- findFreqTerms(top.21.to.50.howworkedfor.tf.emptied, lowfreq=20)
+#write.csv(top21.to.50.howworkedfor.freqterms, "top.21.to.50.howworkedfor.freqterms.csv")
+
+# top 51-100
+#top.51.to.100.howworkedfor.topicmodel = LDA(top.51.to.100.howworkedfor.tf.emptied, 25) 
+#terms(top.51.to.100.howworkedfor.topicmodel, 8)
+#top51.to.100.howworkedfor.freqterms <- findFreqTerms(top.51.to.100.howworkedfor.tf.emptied, lowfreq=20)
+#write.csv(top51.to.100.howworkedfor.freqterms, "top.51.to.100.howworkedfor.freqterms.csv")
+
+# top 101-1000
+#top.101.to.1000.howworkedfor.topicmodel = LDA(top.101.to.1000.howworkedfor.tf.emptied, 25) 
+#terms(top.101.to.1000.howworkedfor.topicmodel, 8)
+#top101.to.1000.howworkedfor.freqterms <- findFreqTerms(top.101.to.1000.howworkedfor.tf.emptied, lowfreq=20)
+#write.csv(top101.to.1000.howworkedfor.freqterms, "top.101.to.1000.howworkedfor.freqterms.csv")
+
+
