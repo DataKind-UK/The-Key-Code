@@ -1,4 +1,4 @@
 Overview.R 
   - returns an error: Error in eval(expr, envir, enclos) : object 'orgsOverPerform' not found
-  - Sample data set provided in /Data/key_analysis_data_1700_sample.csv
+  - Sample data set provided in /SampleData/key_analysis_data_1700_sample.csv
   
