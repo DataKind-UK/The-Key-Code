@@ -4,3 +4,7 @@ Overview.R
   
 clust-info.R
   - cannot be reproduced as sample data not available
+  
+groupcharts.R
+  - does not run with the sample data
+  - contains a binwidth error
